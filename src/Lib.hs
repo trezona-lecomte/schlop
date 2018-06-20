@@ -21,18 +21,18 @@ type API = "users" :> Get '[JSON] [User]
   :<|> "users" :> ReqBody '[JSON] ProtoUser :> Post '[JSON] User
   :<|> "shopping_lists" :> Get '[JSON] [ShoppingList]
   :<|> "shopping_lists" :> ReqBody '[JSON] ProtoShoppingList :> Post '[JSON] ShoppingList
-  :<|> "items" :> Capture "shopping_list_id" ShoppingListId :> Get '[JSON] [Item]
-  :<|> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
+  :<|> "shopping_lists" :> Capture "shopping_list_id" ShoppingListId :> "items" :> Get '[JSON] [Item]
+  :<|> "shopping_lists" :> Capture "shopping_list_id" ShoppingListId :> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
 
 
 startApp :: IO ()
 startApp = Warp.run 8000 app
 
 app :: Application
-app = serve api server
+app = serve api2 server
 
-api :: Proxy API
-api = Proxy
+api2 :: Proxy API
+api2 = Proxy
 
 server :: Server API
 server = getUsers
@@ -60,7 +60,7 @@ createUser proto = do
 getShoppingLists :: Handler [ShoppingList]
 getShoppingLists = do
   conn <- liftIO $ connectPostgreSQL libpqConnString
-  liftIO $ query_ conn "select id, name, creator from shopping_lists"
+  liftIO $ query_ conn "select id, name, creator_id from shopping_lists"
 
 createShoppingList :: ProtoShoppingList -> Handler ShoppingList
 createShoppingList proto = do
@@ -75,16 +75,16 @@ createShoppingList proto = do
 getItems :: ShoppingListId -> Handler [Item]
 getItems listId = do
   conn <- liftIO $ connectPostgreSQL libpqConnString
-  liftIO $ query conn "select id, list_id, description from items where list_id = ?" [listId]
+  liftIO $ query conn "select id, description, shopping_list_id from items where shopping_list_id = ?" [listId]
 
-createItem :: ProtoItem -> Handler Item
-createItem proto = do
+createItem :: ShoppingListId -> ProtoItem -> Handler Item
+createItem shoppingListId proto = do
   conn <- liftIO $ connectPostgreSQL libpqConnString
   [user] :: [Item] <- liftIO $
     query
       conn
-      "insert into items (descripton, shopping_list_id) values (?, ?) returning id, description, shopping_list_id"
-      (description (proto :: ProtoItem), shoppingListId (proto :: ProtoItem))
+      "insert into items (description, shopping_list_id) values (?, ?) returning id, description, shopping_list_id"
+      (description (proto :: ProtoItem), shoppingListId)
   return user
 
 

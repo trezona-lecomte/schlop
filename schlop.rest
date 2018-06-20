@@ -1,7 +1,7 @@
 # -*- restclient -*-
 #
 
-:api = http://localhost:8000
+:api = http://127.0.0.1:8000
 
 
 
@@ -17,8 +17,9 @@ POST :api/users
 Content-Type: application/json
 
 {
-    "email": "foo@bar.com"
+    "email": "foo2@bar.com"
 }
+
 
 #
 # Lists
@@ -27,30 +28,27 @@ Content-Type: application/json
 
 GET :api/shopping_lists
 
+#
 
 POST :api/shopping_lists
 Content-Type: application/json
 {
-    "name": "Foo list",
-    "creator": "foo@bar.com"
+    "name": "Another list",
+    "creatorId": 3
 }
-
-
-DELETE :api/shopping_lists/0
-
-
 
 
 #
 # Items
 #
 
-GET :api/shopping_lists/1/items
+GET :api/shopping_lists/3/items
 
+#
 
-POST :api/shopping_lists/1/items
+POST :api/shopping_lists/3/items
 Content-Type: application/json
 
 {
-    "description": "Bread"
+    "description": "Toes"
 }

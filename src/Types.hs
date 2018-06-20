@@ -74,7 +74,6 @@ instance FromJSON ShoppingListId
 
 data ProtoItem = ProtoItem
   { description    :: Text
-  , shoppingListId :: ShoppingListId
   } deriving (Eq, Show, Generic)
 
 instance ToJSON ProtoItem
