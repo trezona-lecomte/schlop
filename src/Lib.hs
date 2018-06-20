@@ -1,21 +1,32 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Lib
     ( startApp
     ) where
 
+import           Control.Monad.IO.Class     (liftIO)
 import           Data.Aeson
+import           Database.PostgreSQL.Simple (connectPostgreSQL, query, query_)
 import           Network.Wai
-import           Network.Wai.Handler.Warp
+import qualified Network.Wai.Handler.Warp   as Warp
 import           Servant
 import           Types
 
+
 type API = "users" :> Get '[JSON] [User]
+  :<|> "users" :> ReqBody '[JSON] ProtoUser :> Post '[JSON] User
+  :<|> "shopping_lists" :> Get '[JSON] [ShoppingList]
+  :<|> "shopping_lists" :> ReqBody '[JSON] ProtoShoppingList :> Post '[JSON] ShoppingList
+  :<|> "items" :> Capture "shopping_list_id" ShoppingListId :> Get '[JSON] [Item]
+  :<|> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
+
 
 startApp :: IO ()
-startApp = run 1234 app
+startApp = Warp.run 8000 app
 
 app :: Application
 app = serve api server
@@ -24,9 +35,60 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = return users
+server = getUsers
+  :<|> createUser
+  :<|> getShoppingLists
+  :<|> createShoppingList
+  :<|> getItems
+  :<|> createItem
 
-users :: [User]
-users = [ User 1 "foo@bar.com"
-        , User 2 "baz@qux.com"
-        ]
+
+-- Endpoint Handlers
+
+getUsers :: Handler [User]
+getUsers = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  liftIO $ query_ conn "select id, email from users"
+
+createUser :: ProtoUser -> Handler User
+createUser proto = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  [user] :: [User] <- liftIO $
+    query conn "insert into users (email) values (?) returning id, email" [email (proto :: ProtoUser)]
+  return user
+
+getShoppingLists :: Handler [ShoppingList]
+getShoppingLists = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  liftIO $ query_ conn "select id, name, creator from shopping_lists"
+
+createShoppingList :: ProtoShoppingList -> Handler ShoppingList
+createShoppingList proto = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  [shoppingList] :: [ShoppingList] <- liftIO $
+    query
+      conn
+      "insert into shopping_lists (name, creator_id) values (?, ?) returning id, name, creator_id"
+      (name (proto :: ProtoShoppingList), creatorId (proto :: ProtoShoppingList))
+  return shoppingList
+
+getItems :: ShoppingListId -> Handler [Item]
+getItems listId = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  liftIO $ query conn "select id, list_id, description from items where list_id = ?" [listId]
+
+createItem :: ProtoItem -> Handler Item
+createItem proto = do
+  conn <- liftIO $ connectPostgreSQL libpqConnString
+  [user] :: [Item] <- liftIO $
+    query
+      conn
+      "insert into items (descripton, shopping_list_id) values (?, ?) returning id, description, shopping_list_id"
+      (description (proto :: ProtoItem), shoppingListId (proto :: ProtoItem))
+  return user
+
+
+-- Config
+
+libpqConnString =
+  "host=localhost port=5432 dbname=schlop"

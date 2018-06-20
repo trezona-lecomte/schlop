@@ -13,7 +13,9 @@ import qualified Data.CaseInsensitive                 as CI
 import           Data.Text                            (Text)
 import           Database.PostgreSQL.Simple.FromField (FromField)
 import           Database.PostgreSQL.Simple.FromRow   (FromRow, field, fromRow)
+import           Database.PostgreSQL.Simple.ToField   (ToField)
 import           GHC.Generics                         (Generic)
+import           Servant                              (FromHttpApiData)
 
 
 -- Domain Types
@@ -24,7 +26,6 @@ newtype ProtoUser = ProtoUser
 
 instance ToJSON ProtoUser
 instance FromJSON ProtoUser
-
 
 data User = User
   { id    :: UserId
@@ -38,16 +39,24 @@ instance FromRow User where
   fromRow = liftA2 User field field
 
 newtype UserId = UserId Integer
-  deriving (Eq, Show, Num, Generic, FromField)
+  deriving (Eq, Show, Num, Generic, ToField, FromField)
 
 instance ToJSON UserId
 instance FromJSON UserId
 
 
+data ProtoShoppingList = ProtoShoppingList
+  { name      :: Text
+  , creatorId :: UserId
+  } deriving (Eq, Show, Generic)
+
+instance ToJSON ProtoShoppingList
+instance FromJSON ProtoShoppingList
+
 data ShoppingList = ShoppingList
-  { id      :: Integer
-  , name    :: Text
-  , creator :: Integer
+  { id        :: ShoppingListId
+  , name      :: Text
+  , creatorId :: UserId
   } deriving (Eq, Show, Generic)
 
 instance FromRow ShoppingList where
@@ -57,16 +66,24 @@ instance ToJSON ShoppingList
 instance FromJSON ShoppingList
 
 newtype ShoppingListId = ShoppingListId Integer
-  deriving (Eq, Show, Num, Generic, FromField)
+  deriving (Eq, Show, Num, Generic, ToField, FromField, FromHttpApiData)
 
 instance ToJSON ShoppingListId
 instance FromJSON ShoppingListId
 
 
+data ProtoItem = ProtoItem
+  { description    :: Text
+  , shoppingListId :: ShoppingListId
+  } deriving (Eq, Show, Generic)
+
+instance ToJSON ProtoItem
+instance FromJSON ProtoItem
+
 data Item = Item
-  { id          :: Integer
-  , listId      :: Integer
-  , description :: Text
+  { id             :: ItemId
+  , description    :: Text
+  , shoppingListId :: ShoppingListId
   } deriving (Eq, Show, Generic)
 
 instance FromRow Item where
@@ -76,7 +93,7 @@ instance ToJSON Item
 instance FromJSON Item
 
 newtype ItemId = ItemId Integer
-  deriving (Eq, Show, Num, Generic, FromField)
+  deriving (Eq, Show, Num, Generic, ToField, FromField)
 
 instance ToJSON ItemId
 instance FromJSON ItemId
