@@ -1,0 +1,56 @@
+# -*- restclient -*-
+#
+
+:api = http://localhost:8000
+
+
+
+#
+# Users
+#
+
+GET :api/users
+
+#
+
+POST :api/users
+Content-Type: application/json
+
+{
+    "email": "foo@bar.com"
+}
+
+#
+# Lists
+#
+
+
+GET :api/shopping_lists
+
+
+POST :api/shopping_lists
+Content-Type: application/json
+{
+    "name": "Foo list",
+    "creator": "foo@bar.com"
+}
+
+
+DELETE :api/shopping_lists/0
+
+
+
+
+#
+# Items
+#
+
+GET :api/shopping_lists/1/items
+
+
+POST :api/shopping_lists/1/items
+Content-Type: application/json
+
+{
+    "description": "Bread"
+}
