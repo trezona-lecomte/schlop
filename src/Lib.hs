@@ -13,6 +13,7 @@ import           Database.PostgreSQL.Simple (connectPostgreSQL, query, query_)
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp   as Warp
 import           Servant
+-- import qualified Servant.Utils.StaticFiles  as Static
 import           Types
 
 
@@ -23,15 +24,19 @@ type API = "users" :> Get '[JSON] [User]
   :<|> "shopping_lists" :> Capture "shopping_list_id" Int64 :> "items" :> Get '[JSON] [Item]
   :<|> "shopping_lists" :> Capture "shopping_list_id" Int64 :> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
 
+type API' = API :<|> Raw
 
 startApp :: IO ()
 startApp = Warp.run 8000 app
 
 app :: Application
-app = serve api server
+app = serve api' server'
 
 api :: Proxy API
 api = Proxy
+
+api' :: Proxy API'
+api' = Proxy
 
 server :: Server API
 server = getUsers
@@ -41,6 +46,10 @@ server = getUsers
   :<|> getItems
   :<|> createItem
 
+
+server' :: Server API'
+server' = server
+  :<|> serveDirectoryFileServer "elm"
 
 -- Endpoint Handlers
 
