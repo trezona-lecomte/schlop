@@ -26,6 +26,7 @@ library
                      , elm-export
                      , http-client
                      , postgresql-simple
+                     , postgresql-transactional
                      , resource-pool
                      , servant-client
                      , servant-elm
