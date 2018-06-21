@@ -4,9 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
 
-module Lib
-    ( startApp
-    ) where
+module Lib (startApp, api) where
 
 import           Control.Monad.IO.Class     (liftIO)
 import           Data.Aeson
@@ -29,10 +27,10 @@ startApp :: IO ()
 startApp = Warp.run 8000 app
 
 app :: Application
-app = serve api2 server
+app = serve api server
 
-api2 :: Proxy API
-api2 = Proxy
+api :: Proxy API
+api = Proxy
 
 server :: Server API
 server = getUsers
