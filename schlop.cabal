@@ -17,12 +17,16 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
   other-modules:       Types
+                     , ClientGenerator
                      , Documentation
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , case-insensitive
+                     , elm-export
                      , postgresql-simple
+                     , servant-elm
                      , servant-docs
+                     , servant-kotlin
                      , servant-server
                      , text
                      , wai

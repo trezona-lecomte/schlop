@@ -8,6 +8,7 @@ module Lib (startApp, api) where
 
 import           Control.Monad.IO.Class     (liftIO)
 import           Data.Aeson
+import           Data.Int                   (Int64)
 import           Database.PostgreSQL.Simple (connectPostgreSQL, query, query_)
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp   as Warp
@@ -19,8 +20,8 @@ type API = "users" :> Get '[JSON] [User]
   :<|> "users" :> ReqBody '[JSON] ProtoUser :> Post '[JSON] User
   :<|> "shopping_lists" :> Get '[JSON] [ShoppingList]
   :<|> "shopping_lists" :> ReqBody '[JSON] ProtoShoppingList :> Post '[JSON] ShoppingList
-  :<|> "shopping_lists" :> Capture "shopping_list_id" ShoppingListId :> "items" :> Get '[JSON] [Item]
-  :<|> "shopping_lists" :> Capture "shopping_list_id" ShoppingListId :> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
+  :<|> "shopping_lists" :> Capture "shopping_list_id" Int64 :> "items" :> Get '[JSON] [Item]
+  :<|> "shopping_lists" :> Capture "shopping_list_id" Int64 :> "items" :> ReqBody '[JSON] ProtoItem :> Post '[JSON] Item
 
 
 startApp :: IO ()
@@ -70,12 +71,12 @@ createShoppingList proto = do
       (name (proto :: ProtoShoppingList), creatorId (proto :: ProtoShoppingList))
   return shoppingList
 
-getItems :: ShoppingListId -> Handler [Item]
+getItems :: Int64 -> Handler [Item]
 getItems listId = do
   conn <- liftIO $ connectPostgreSQL libpqConnString
   liftIO $ query conn "select id, description, shopping_list_id from items where shopping_list_id = ?" [listId]
 
-createItem :: ShoppingListId -> ProtoItem -> Handler Item
+createItem :: Int64 -> ProtoItem -> Handler Item
 createItem shoppingListId proto = do
   conn <- liftIO $ connectPostgreSQL libpqConnString
   [user] :: [Item] <- liftIO $

@@ -6,6 +6,7 @@
 
 module Documentation (markdownDoc) where
 
+import           Data.Int     (Int64)
 import           Lib          (api)
 import           Servant      (Capture)
 import           Servant.Docs (DocCapture (..), ToCapture, ToSample,
@@ -37,7 +38,7 @@ instance ToSample ProtoItem where
 instance ToSample Item where
   toSamples _ = singleSample (Item 3 "Bread" 2)
 
-instance ToCapture (Capture "shopping_list_id" ShoppingListId) where
+instance ToCapture (Capture "shopping_list_id" Int64) where
   toCapture _ =
     DocCapture "shopping_list_id" "(integer) id of the shopping list to fetch items for"
 

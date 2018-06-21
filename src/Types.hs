@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DuplicateRecordFields      #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
 
 module Types where
 
@@ -10,27 +11,32 @@ import           Data.Aeson                           (FromJSON, ToJSON)
 import qualified Data.Aeson                           as Aeson
 import           Data.CaseInsensitive                 (CI)
 import qualified Data.CaseInsensitive                 as CI
+import           Data.Int                             (Int64)
 import           Data.Text                            (Text)
 import           Database.PostgreSQL.Simple.FromField (FromField)
 import           Database.PostgreSQL.Simple.FromRow   (FromRow, field, fromRow)
 import           Database.PostgreSQL.Simple.ToField   (ToField)
-import           GHC.Generics                         (Generic)
+import           Elm                                  (ElmDatatype,
+                                                       genericToElmDatatype,
+                                                       toElmType)
+import           GHC.Generics                         (Generic, from)
 import           Servant                              (FromHttpApiData)
+import           Servant.Elm                          (ElmType (..))
 
 
 -- Domain Types
 
 newtype ProtoUser = ProtoUser
   { email :: Text
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance ToJSON ProtoUser
 instance FromJSON ProtoUser
 
 data User = User
-  { id    :: UserId
+  { id    :: Int64
   , email :: CI Text
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance ToJSON User
 instance FromJSON User
@@ -38,26 +44,20 @@ instance FromJSON User
 instance FromRow User where
   fromRow = liftA2 User field field
 
-newtype UserId = UserId Integer
-  deriving (Eq, Show, Num, Generic, ToField, FromField)
-
-instance ToJSON UserId
-instance FromJSON UserId
-
 
 data ProtoShoppingList = ProtoShoppingList
   { name      :: Text
-  , creatorId :: UserId
-  } deriving (Eq, Show, Generic)
+  , creatorId :: Int64
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance ToJSON ProtoShoppingList
 instance FromJSON ProtoShoppingList
 
 data ShoppingList = ShoppingList
-  { id        :: ShoppingListId
+  { id        :: Int64
   , name      :: Text
-  , creatorId :: UserId
-  } deriving (Eq, Show, Generic)
+  , creatorId :: Int64
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance FromRow ShoppingList where
   fromRow = liftA3 ShoppingList field field field
@@ -65,37 +65,25 @@ instance FromRow ShoppingList where
 instance ToJSON ShoppingList
 instance FromJSON ShoppingList
 
-newtype ShoppingListId = ShoppingListId Integer
-  deriving (Eq, Show, Num, Generic, ToField, FromField, FromHttpApiData)
 
-instance ToJSON ShoppingListId
-instance FromJSON ShoppingListId
-
-
-data ProtoItem = ProtoItem
+newtype ProtoItem = ProtoItem
   { description    :: Text
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance ToJSON ProtoItem
 instance FromJSON ProtoItem
 
 data Item = Item
-  { id             :: ItemId
+  { id             :: Int64
   , description    :: Text
-  , shoppingListId :: ShoppingListId
-  } deriving (Eq, Show, Generic)
+  , shoppingListId :: Int64
+  } deriving (Eq, Show, Generic, ElmType)
 
 instance FromRow Item where
   fromRow = liftA3 Item field field field
 
 instance ToJSON Item
 instance FromJSON Item
-
-newtype ItemId = ItemId Integer
-  deriving (Eq, Show, Num, Generic, ToField, FromField)
-
-instance ToJSON ItemId
-instance FromJSON ItemId
 
 
 -- Case Insensitivity
@@ -106,3 +94,7 @@ instance FromJSON (CI Text) where
 
 instance ToJSON (CI Text) where
   toJSON a = Aeson.String (CI.original a)
+
+instance ElmType (CI Text) where
+  toElmType :: CI Text -> ElmDatatype
+  toElmType ciText = toElmType $ CI.original ciText
