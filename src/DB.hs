@@ -9,6 +9,7 @@
 module DB where
 
 import           Control.Monad.IO.Class          (liftIO)
+import           Data.ByteString                 (ByteString)
 import           Data.Int                        (Int64)
 import           Data.Pool                       (Pool, createPool,
                                                   withResource)
@@ -53,3 +54,19 @@ insertItem shoppingListId ProtoItem{description} = do
       "insert into items (description, shopping_list_id) values (?, ?) returning id, description, shopping_list_id"
   return user
 
+
+-- Config
+
+libpqConnString :: ByteString
+libpqConnString =
+  "host=localhost port=5432 dbname=schlop"
+
+type DBConnectionString = ByteString
+
+initConnectionPool :: DBConnectionString -> IO (Pool Connection)
+initConnectionPool connStr =
+  createPool (connectPostgreSQL connStr)
+             close
+             2 -- stripes
+             60 -- unused connections are kept open for a minute
+             10 -- max. 10 connections open per stripe

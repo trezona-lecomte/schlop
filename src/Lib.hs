@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -11,7 +10,6 @@ import           Control.Concurrent
 import           Control.Exception          (bracket)
 import           Control.Monad.IO.Class     (liftIO)
 import           Data.Aeson
-import           Data.ByteString            (ByteString)
 import           Data.Int                   (Int64)
 import           Data.Pool                  (Pool, createPool, withResource)
 import qualified Data.Pool                  as Pool
@@ -74,21 +72,5 @@ startApp :: IO ()
 startApp = do
   -- We should read the connection string from a config file,
   -- environment variable, or somewhere else instead.
-  pool <- initConnectionPool libpqConnString
+  pool <- DB.initConnectionPool DB.libpqConnString
   runApp pool
-
-
--- DB
-
-libpqConnString =
-  "host=localhost port=5432 dbname=schlop"
-
-type DBConnectionString = ByteString
-
-initConnectionPool :: DBConnectionString -> IO (Pool Connection)
-initConnectionPool connStr =
-  createPool (connectPostgreSQL connStr)
-             close
-             2 -- stripes
-             60 -- unused connections are kept open for a minute
-             10 -- max. 10 connections open per stripe
